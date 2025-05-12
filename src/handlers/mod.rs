@@ -96,4 +96,37 @@ pub async fn handle_message(
         "message": response.response,
         "usage": response.usage
     }))))
+}
+
+/// Handles database reset requests.
+/// 
+/// This endpoint clears all data from the Qdrant collection,
+/// effectively resetting the database to its initial state.
+/// 
+/// # Arguments
+/// * `state` - Application state containing service instances
+/// 
+/// # Returns
+/// * `Ok(Json<ApiResponse<Value>>)` - Success message
+/// * `Err(StatusCode)` - Error status code if the reset fails
+pub async fn handle_reset(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<ApiResponse<Value>>, StatusCode> {
+    // Delete all points from the collection
+    state
+        .qdrant_service
+        .delete_all_points()
+        .await
+        .map_err(|e| {
+            error!("Failed to reset database: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    // Log success
+    info!("Database reset successfully");
+
+    // Return success message
+    Ok(Json(ApiResponse::success(serde_json::json!({
+        "message": "Database reset successfully"
+    }))))
 } 

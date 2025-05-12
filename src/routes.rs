@@ -6,7 +6,7 @@ use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 
 use crate::{
-    handlers::{handle_embed, handle_message},
+    handlers::{handle_embed, handle_message, handle_reset},
     middleware::{auth_middleware, logging_middleware},
     state::AppState,
 };
@@ -15,6 +15,7 @@ use crate::{
 pub mod paths {
     pub const EMBED: &str = "/api/embed";
     pub const CHAT: &str = "/api/chat";
+    pub const RESET: &str = "/api/reset";
 }
 
 /// Creates the application router with all routes and middleware
@@ -22,7 +23,8 @@ pub fn create_router(state: Arc<AppState>) -> Router {
     // Create base router with routes
     let router = Router::new()
         .route(paths::EMBED, post(handle_embed))
-        .route(paths::CHAT, post(handle_message));
+        .route(paths::CHAT, post(handle_message))
+        .route(paths::RESET, post(handle_reset));
 
     // Add middleware layers
     router

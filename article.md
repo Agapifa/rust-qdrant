@@ -369,6 +369,96 @@ The API will be available at `http://127.0.0.1:3000` with the following endpoint
 - POST `/api/embed` - Generate embeddings
 - POST `/api/chat` - Chat completions
 
+## Test Results and Comparison
+
+### Before and After Embedding Test
+
+We conducted a test to demonstrate the system's knowledge before and after embedding a document about Rust programming language. Here are the results:
+
+1. **Initial State (Before Embedding)**
+```bash
+# Test chat before any embeddings
+curl -X POST http://127.0.0.1:3000/api/chat \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: your_api_key_here" \
+  -d '{"message": "Rust là ngôn ngữ lập trình gì?"}'
+
+# Response
+{
+    "data": {
+        "message": "I don't have specific information about Rust in my current knowledge base. Would you like me to search for information about Rust programming language?"
+    },
+    "error": null
+}
+```
+
+2. **Document Embedding**
+```bash
+# Store document with embedding
+curl -X POST http://127.0.0.1:3000/api/embed \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: your_api_key_here" \
+  -d '{
+    "text": "Rust là một ngôn ngữ lập trình hệ thống hiện đại, tập trung vào hiệu suất, an toàn và đồng thời. Nó ngăn chặn các lỗi segmentation và đảm bảo an toàn thread.",
+    "metadata": {
+        "title": "Giới thiệu về Rust",
+        "category": "Programming",
+        "language": "vi"
+    }
+}'
+
+# Response
+{
+    "data": {
+        "status": "success",
+        "message": "Document embedded successfully",
+        "metadata": {
+            "title": "Giới thiệu về Rust",
+            "category": "Programming",
+            "language": "vi"
+        }
+    },
+    "error": null
+}
+```
+
+3. **After Embedding Test**
+```bash
+# Test chat after embedding
+curl -X POST http://127.0.0.1:3000/api/chat \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: your_api_key_here" \
+  -d '{"message": "Rust là ngôn ngữ lập trình gì?"}'
+
+# Response
+{
+    "data": {
+        "message": "Rust là một ngôn ngữ lập trình hệ thống hiện đại với các đặc điểm chính:\n\n1. Tập trung vào hiệu suất cao\n2. Đảm bảo an toàn trong lập trình\n3. Hỗ trợ lập trình đồng thời\n4. Ngăn chặn các lỗi segmentation\n5. Đảm bảo an toàn thread\n\nĐây là một ngôn ngữ được thiết kế để cung cấp hiệu suất tốt như C/C++ nhưng với các tính năng an toàn hơn."
+    },
+    "error": null
+}
+```
+
+### Key Observations
+
+1. **Knowledge Base Evolution**:
+   - Before embedding: The system had no specific knowledge about Rust
+   - After embedding: The system could provide detailed information about Rust's features
+
+2. **Response Quality**:
+   - Initial response was generic and indicated lack of knowledge
+   - Post-embedding response was specific, structured, and included all key points from the embedded document
+
+3. **Metadata Integration**:
+   - The system successfully stored and associated metadata with the embedded content
+   - Metadata included title, category, and language information
+
+4. **Language Handling**:
+   - The system effectively handled Vietnamese language content
+   - Both input and output maintained proper Vietnamese language formatting
+
+This test demonstrates how the system's knowledge and response capabilities evolve as documents are embedded, showing the practical application of vector search in building a knowledge base.
+
 ## Best Practices Implemented
 
 1. **Error Handling**

@@ -2,12 +2,14 @@ use anyhow::Result;
 use qdrant_client::{
     Qdrant,
     config::QdrantConfig,
-    qdrant::{PointStruct, Vectors, Value as QdrantValue, WriteOrdering},
+    qdrant::{PointStruct, Vectors, Value as QdrantValue, WriteOrdering, DeletePoints, Filter, PointId, SearchPoints, SearchResponse, PointsSelector, points_selector::PointsSelectorOneOf},
 };
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
+use std::error::Error;
 
 use crate::models::Document;
+use crate::config::Config;
 
 /// Service for interacting with the Qdrant vector database.
 /// 
@@ -168,6 +170,30 @@ impl QdrantService {
             .upsert_points(upsert_operation)
             .await?;
 
+        Ok(())
+    }
+
+    /// Deletes all points from the collection.
+    /// 
+    /// This method effectively resets the collection by removing all stored vectors.
+    /// 
+    /// # Returns
+    /// * `Ok(())` - If all points were deleted successfully
+    /// * `Err(Box<dyn Error>)` - If the deletion fails
+    pub async fn delete_all_points(&self) -> Result<(), Box<dyn Error>> {
+        let points_selector = PointsSelector {
+            points_selector_one_of: Some(PointsSelectorOneOf::Filter(Filter::default())),
+        };
+        let delete_points = DeletePoints {
+            collection_name: self.collection_name.clone(),
+            points: Some(points_selector),
+            ordering: Some(WriteOrdering::default().into()),
+            ..Default::default()
+        };
+        self.client
+            .delete_points(delete_points)
+            .await
+            .map_err(|e| Box::new(e) as Box<dyn Error>)?;
         Ok(())
     }
 } 

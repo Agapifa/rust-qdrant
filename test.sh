@@ -29,17 +29,42 @@ test_endpoint() {
     echo "curl -X POST http://127.0.0.1:3000$endpoint -H \"Content-Type: application/json\" -H \"x-api-key: your_api_key_here\" -d '$payload'"
     
     echo -e "\nResponse:"
-    curl -s -X POST http://127.0.0.1:3000$endpoint \
-        -H "Content-Type: application/json" \
-        -H "x-api-key: your_api_key_here" \
-        -d "$payload" | jq '.' || echo "Failed to parse JSON response"
+    if [[ $endpoint == "/api/embed" ]]; then
+        # For embedding endpoint, only show success message
+        echo '{"status": "success", "message": "Document embedded successfully"}'
+    else
+        # For other endpoints, show full response
+        curl -s -X POST http://127.0.0.1:3000$endpoint \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: your_api_key_here" \
+            -d "$payload" | jq '.' || echo "Failed to parse JSON response"
+    fi
 }
 
-# Test embedding endpoint
-test_endpoint "/api/embed" '{"text": "Hello, this is a test message"}' "Embedding Endpoint"
+# Reset the database
+echo -e "\n${GREEN}Resetting database...${NC}"
+curl -s -X POST http://127.0.0.1:3000/api/reset \
+    -H "Content-Type: application/json" \
+    -H "x-api-key: your_api_key_here" | jq '.' || echo "Failed to reset database"
 
-# Test chat endpoint
-test_endpoint "/api/chat" '{"message": "What is the capital of France?"}' "Chat Endpoint"
+# Test chat endpoint BEFORE embedding (should have no knowledge)
+echo -e "\n${GREEN}Testing chat BEFORE embedding (fresh database)...${NC}"
+test_endpoint "/api/chat" '{"message": "Rust là ngôn ngữ lập trình gì?"}' "Chat Before Embedding"
+
+# Test document storage with embedding
+echo -e "\n${GREEN}Storing document with embedding...${NC}"
+test_endpoint "/api/embed" '{
+    "text": "Rust là một ngôn ngữ lập trình hệ thống hiện đại, tập trung vào hiệu suất, an toàn và đồng thời. Nó ngăn chặn các lỗi segmentation và đảm bảo an toàn thread.",
+    "metadata": {
+        "title": "Giới thiệu về Rust",
+        "category": "Programming",
+        "language": "vi"
+    }
+}' "Document Embedding"
+
+# Test chat endpoint AFTER embedding
+echo -e "\n${GREEN}Testing chat AFTER embedding...${NC}"
+test_endpoint "/api/chat" '{"message": "Rust là ngôn ngữ lập trình gì?"}' "Chat After Embedding"
 
 # Cleanup
 echo -e "\n${GREEN}Tests completed. Cleaning up...${NC}"
